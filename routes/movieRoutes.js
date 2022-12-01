@@ -1,16 +1,11 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const app = express();
 require("dotenv").config();
-const jwt = require("jsonwebtoken");
 const router = require("express").Router();
-const bcrypt = require("bcrypt");
 require("dotenv").config();
 const checkToken = require("../verificarToken");
 const Movie = require("../models/Movie");
 
 router.post("/", checkToken, async (req, res) => {
-  const { title, desc, tag } = req.body;
+  const { title, desc, tag_id, url } = req.body;
 
   if (!title) {
     res.status(422).json({ error: "o titulo é obrigatorio" });
@@ -18,14 +13,15 @@ router.post("/", checkToken, async (req, res) => {
   if (!desc) {
     res.status(422).json({ error: "a descrição é obrigatorio" });
   }
-  if (!tag) {
+  if (!tag_id) {
     res.status(422).json({ error: "a tag é obrigatoria" });
   }
 
   const movie = {
     title,
     desc,
-    tag,
+    tag_id,
+    url,
   };
 
   //criar
@@ -72,12 +68,13 @@ router.get("/:id", checkToken, async (req, res) => {
 router.put("/:id", checkToken, async (req, res) => {
   const id = req.params.id;
 
-  const { title, desc, tag } = req.body;
+  const { title, desc, tag, url } = req.body;
 
   const movie = {
     title,
     desc,
     tag,
+    url,
   };
 
   try {

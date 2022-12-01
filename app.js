@@ -3,7 +3,6 @@ const mongoose = require("mongoose");
 const app = express();
 require("dotenv").config();
 const jwt = require("jsonwebtoken");
-const router = require("express").Router();
 const bcrypt = require("bcrypt");
 require("dotenv").config();
 const checkToken = require("./verificarToken");
@@ -13,7 +12,6 @@ const tagRoutes = require("./routes/tagRoutes");
 app.use(express.json());
 
 const User = require("./models/User");
-//const { response } = require('express');
 
 app.use(
   express.urlencoded({

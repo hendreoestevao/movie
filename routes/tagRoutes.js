@@ -1,14 +1,8 @@
-const express = require("express");
-const mongoose = require("mongoose");
-const app = express();
 require("dotenv").config();
-const jwt = require("jsonwebtoken");
 const router = require("express").Router();
-const bcrypt = require("bcrypt");
 require("dotenv").config();
 const checkToken = require("../verificarToken");
 const Tag = require("../models/Tag");
-const { request } = require("express");
 const Movie = require("../models/Movie");
 
 //criar tag
@@ -25,8 +19,14 @@ router.post("/", checkToken, async (req, res) => {
 
   //criar
   try {
-    await Tag.create(tagg);
-    res.status(201).json({ msg: "Tag criada" });
+    const tagexist = await Tag.find({ tag });
+    if (tagexist.length > 0) {
+      res.status(400).json({ msg: "essa tag ja existe" });
+    } else {
+      await Tag.create(tagg);
+
+      res.status(201).json({ msg: "Tag criada" });
+    }
   } catch (error) {
     res.status(500).json({ error: error });
   }
@@ -45,22 +45,18 @@ router.get("/", checkToken, async (req, res) => {
 
 //listar  videos de uma determinada tag
 
-router.get("/random", checkToken, async (req, res) => {
-  const tag = req.query.tag;
-  let movie;
-  try {
-    if (tag === tag) {
-      movie = await Movie.aggregate([{ $match: { tag: tag } }]);
-    } else {
-      movie = await Movie.aggregate([
-        { $match: { tag: " " } },
-        { $sample: { size: 1 } },
-      ]);
-    }
+router.get("/:title_tag/videos", checkToken, async (req, res) => {
+  const tag = req.params.title_tag;
 
-    res.status(200).json(movie);
+  try {
+    const tagmongo = await Tag.findOne({ tag });
+    if (!tagmongo) {
+      res.status(404).json({ message: "tag não encontrada" });
+    }
+    const movies = await Movie.find({ tag_id: tagmongo._id });
+    res.status(200).json({ movies });
   } catch (error) {
-    res.status(500).json(err);
+    res.status(500).json({ error: error });
   }
 });
 
@@ -91,19 +87,25 @@ router.put("/:id", checkToken, async (req, res) => {
 //deletar uma tag
 router.delete("/:id", checkToken, async (req, res) => {
   const id = req.params.id;
+  const movies = await Movie.find({ tag_id: id });
+  if (movies.length > 0) {
+    res
+      .status(404)
+      .json({ message: "Existe um filme cadastrado com essa tag" });
+  } else {
+    const tagg = await Tag.findOne({ _id: id });
 
-  const tagg = await Tag.findOne({ _id: id });
+    if (!tagg) {
+      res.status(424).json({ message: "Tag não encontrada" });
+      return;
+    }
+    try {
+      await Tag.deleteOne({ _id: id });
 
-  if (!tagg) {
-    res.status(424).json({ message: "Tag não encontrada" });
-    return;
-  }
-  try {
-    await Tag.deleteOne({ _id: id });
-
-    res.status(200).json({ message: "Tag deletada com sucesso" });
-  } catch (error) {
-    res.status(500).json({ error: error });
+      res.status(200).json({ message: "Tag deletada com sucesso" });
+    } catch (error) {
+      res.status(500).json({ error: error });
+    }
   }
 });
 
